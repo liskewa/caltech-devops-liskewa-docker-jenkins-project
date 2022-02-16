@@ -1,20 +1,50 @@
 pipeline {
-    agent any 
+    agent any
+    environment {
+        PRJNAME = "caltech-devops-liskewa-docker-jenkins-project"
+    }
     stages {
-        stage('Build') { 
+        stage('Setup') {
             steps {
-                // 
+                echo "Starting Setup"
+                sh "printenv"
+                sh "rm -fr $WORKSPACE/*"
+                echo "Finishing Setup"
             }
         }
-        stage('Test') { 
+        stage('Fetching Source Code') {
             steps {
-                // 
+                echo "Starting Fetching Source Code "
+                sh "git clone https://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@github.com/liskewa/${PRJNAME}.git"
+                sh "ls -la ${WORKSPACE}/${PRJNAME}"
+                echo "Finishing Fetching Source Code"
             }
         }
-        stage('Deploy') { 
+        stage("Building Docker Image") {
             steps {
-                // 
+                echo "Starting Building Docker Image"
+                sh "docker build -t warrenliske/${PRJNAME}:${BUILD_NUMBER} $WORKSPACE/${PRJNAME}"
+                sh "docker images"
+                echo "Finishing Building Docker Image"
+            }
+        }
+        stage('Test') {
+            steps {
+                echo 'Starting Test'
+                sh "docker run warrenliske/${PRJNAME}:${BUILD_NUMBER}"
+                echo 'Finishing Test'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                withDockerRegistry(credentialsId: "dockerhub", url: "") {
+                    echo 'Starting Deploy'
+                    sh "docker push warrenliske/${PRJNAME}:${BUILD_NUMBER}"
+                    echo 'Finishing Deploy'
+            
+                }
             }
         }
     }
 }
+
